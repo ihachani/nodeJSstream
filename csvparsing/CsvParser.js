@@ -22,9 +22,17 @@ const stringifyStream = new stream.Transform({
     }
 });
 
+const consoleSinkWritable = new stream.Writable({
+    objectMode: true,
+    write: function(chunk, encoding, next) {
+        console.log(chunk);
+        next();
+    }
+});
+
 creaturesFileReadStream
     .pipe(parser)
-    .pipe(stringifyStream);
+    .pipe(consoleSinkWritable);
 
 
 
