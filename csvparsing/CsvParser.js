@@ -4,6 +4,8 @@ const csv = require('csv');
 const parser = csv.parse({
     columns: true
 });
+let parseCounter = 0;
+let mongoCounter = 0;
 
 const fs = require('fs');
 const path = require('path');
@@ -21,11 +23,14 @@ MongoClient.connect(url)
         const dbo = db.db('streamsDB');
 
         const mongoDBWritable = new stream.Writable({
+            highWaterMark: 4,
             objectMode: true,
             write: function (record, encoding, next) {
                 // console.log(record);
                 dbo.collection('creatures').insertOne(record).then(() => {
-                        next();
+                            mongoCounter++;
+                            console.log('sent to mongo Database ' + mongoCounter + ' parsed records ' + parseCounter);
+                            next();
                     }
                 ).catch(error => {
                     next(error);
@@ -33,7 +38,11 @@ MongoClient.connect(url)
             }
         });
 
-        mongoDBWritable.on('finish',() =>{
+        parser.on('data', () => {
+            parseCounter++;
+        });
+
+        mongoDBWritable.on('finish', () => {
             console.log('end');
             db.close();
         })
@@ -42,10 +51,4 @@ MongoClient.connect(url)
             .pipe(mongoDBWritable);
 
     })
-
-
-
-
-
-
 
